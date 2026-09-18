@@ -1,0 +1,17 @@
+# Where the harness writes loaded tables.
+#
+# Nothing compiles or runs until `type` is set. What each type needs:
+#   duckdb     database = path to the .duckdb file; schema optional (defaults to main)
+#   snowflake  database, schema and credentials all required
+#   postgres   database, schema and credentials all required
+#   bigquery   database = GCP project, schema = dataset; credentials required
+#
+# Any value written as env:VAR_NAME is read from that environment variable when
+# the file is loaded, so secrets never have to live in this file.
+
+connections:
+  target:
+    type: null            # duckdb | snowflake | bigquery | postgres
+    database: null
+    schema: null
+    credentials: null     # env:VAR_NAME reads from an environment variable
