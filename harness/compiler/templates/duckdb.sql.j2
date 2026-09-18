@@ -1,0 +1,56 @@
+{#- DuckDB dialect: every piece of SQL that differs between warehouses is a macro here.
+    Second dialect: copy this file to <type>.sql.j2, keep each macro's name and arguments,
+    rewrite the bodies, and register it in DIALECTS in harness/compiler/dbt.py. -#}
+
+{% macro read_source(path) -%}
+select * from read_csv({{ path | sql_literal }}, header = true, sample_size = -1)
+{%- endmacro %}
+
+{% macro rename(mapping, input) -%}
+select * rename (
+{% for old, new in mapping.items() %}
+    {{ old }} as {{ new }}{{ "," if not loop.last }}
+{% endfor %}
+)
+from {{ input }}
+{%- endmacro %}
+
+{% macro parse_date(column, formats, input) -%}
+select * replace (
+    coalesce(
+{% for name in formats %}
+        try_strptime(cast({{ column }} as varchar), {{ date_formats[name] | sql_literal }}){{ "," if not loop.last }}  -- {{ name }}
+{% endfor %}
+    )::date as {{ column }}
+)
+from {{ input }}
+{%- endmacro %}
+
+{% macro dedupe(keys, order_by, input) -%}
+select *
+from {{ input }}
+qualify row_number() over (partition by {{ keys | join(", ") }} order by {{ order_by }}) = 1
+{%- endmacro %}
+
+{#- concat_ws skips NULLs, so a row that fails nothing gets an empty string. -#}
+{% macro failed_rules(checks) -%}
+{% if checks %}
+concat_ws(', ',
+{% for check in checks %}
+    case when {{ check.condition }} then {{ check.label | sql_literal }} end{{ "," if not loop.last }}
+{% endfor %}
+)
+{%- else -%}
+''
+{%- endif %}
+{%- endmacro %}
+
+{% macro cast(column, type) -%}
+{% set names = {"integer": "bigint", "string": "varchar", "date": "date", "timestamp": "timestamp", "boolean": "boolean"} %}
+cast({{ column }} as {{ names.get(type, type) }})
+{%- endmacro %}
+
+{% macro publish(relation, schema, table) -%}
+create schema if not exists {{ schema }};
+create or replace table {{ schema }}.{{ table }} as select * from {{ relation }};
+{%- endmacro %}

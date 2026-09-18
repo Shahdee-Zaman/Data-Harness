@@ -1,0 +1,11 @@
+{#- Not a dbt model: `harness run` executes this to count the rows left after each step. -#}
+{% include "chain.sql.j2" %}
+
+select step, row_count
+from (
+    select 0 as position, 'source' as step, count(*) as row_count from source
+{% for step in steps %}
+    union all select {{ loop.index }}, {{ step.cte | sql_literal }}, count(*) from {{ step.cte }}
+{% endfor %}
+)
+order by position

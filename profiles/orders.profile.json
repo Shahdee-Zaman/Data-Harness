@@ -1,0 +1,113 @@
+{
+  "source": "data/raw/orders.csv",
+  "row_count": 202,
+  "profiled_at": "2026-09-18T13:18:44-04:00",
+  "columns": [
+    {
+      "name": "order_id",
+      "inferred_type": "integer",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 200,
+      "min": 100001,
+      "max": 100200,
+      "negative_count": 0,
+      "sample_values": [
+        100001,
+        100002,
+        100003,
+        100004,
+        100005
+      ]
+    },
+    {
+      "name": "cust_id",
+      "inferred_type": "string",
+      "null_count": 4,
+      "null_pct": 1.98,
+      "distinct_count": 59,
+      "sample_values": [
+        "C3005",
+        "C8050",
+        "C6400",
+        "C7778",
+        "C2838"
+      ],
+      "date_formats": {}
+    },
+    {
+      "name": "amount",
+      "inferred_type": "decimal",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 45,
+      "min": -342.47,
+      "max": 455.41,
+      "negative_count": 5,
+      "sample_values": [
+        197.09,
+        362.44,
+        239.96,
+        84.67,
+        419.98
+      ]
+    },
+    {
+      "name": "status",
+      "inferred_type": "string",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 6,
+      "sample_values": [
+        "delivered",
+        "cancelled",
+        "shipped",
+        "returned",
+        "placed"
+      ],
+      "distinct_values": [
+        "cancelled",
+        "delivered",
+        "placed",
+        "returned",
+        "shipped",
+        "test"
+      ],
+      "date_formats": {}
+    },
+    {
+      "name": "order_date",
+      "inferred_type": "string",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 49,
+      "sample_values": [
+        "2026-09-06",
+        "2026-09-11",
+        "2026-09-05",
+        "2026-08-30",
+        "09/07/2026"
+      ],
+      "date_formats": {
+        "YYYY-MM-DD": 126,
+        "MM/DD/YYYY": 76
+      }
+    },
+    {
+      "name": "updated_at",
+      "inferred_type": "timestamp",
+      "null_count": 0,
+      "null_pct": 0.0,
+      "distinct_count": 155,
+      "min": "2026-08-24 12:00:00",
+      "max": "2026-09-18 13:00:00",
+      "sample_values": [
+        "2026-09-15 23:00:00",
+        "2026-09-15 21:00:00",
+        "2026-09-17 03:00:00",
+        "2026-09-16 03:00:00",
+        "2026-09-18 02:00:00"
+      ]
+    }
+  ]
+}
