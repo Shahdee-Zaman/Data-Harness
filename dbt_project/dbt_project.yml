@@ -1,0 +1,16 @@
+# dbt project used by the harness. Everything under models/generated/ is written by
+# `harness compile` from configs/pipelines/*.yml; do not edit those files by hand.
+name: harness
+version: "1.0.0"
+config-version: 2
+profile: harness            # `harness run` writes this profile from configs/connections/warehouse.yml
+
+model-paths: ["models"]
+
+models:
+  harness:
+    generated:
+      # Built into <warehouse schema>_staging first. `harness run` copies the clean table
+      # to the pipeline's target only when no error-severity check failed.
+      +materialized: table
+      +schema: staging

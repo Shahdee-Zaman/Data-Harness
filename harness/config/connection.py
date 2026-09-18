@@ -25,7 +25,6 @@ import os
 from pathlib import Path
 from typing import Annotated, Literal, Union
 
-import yaml
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -37,18 +36,11 @@ from pydantic import (
 )
 from pydantic_core import PydanticCustomError
 
+from harness.config import ConfigError, read_yaml
+
 DEFAULT_PATH = Path("configs/connections/warehouse.yml")
 WAREHOUSE_TYPES = ("duckdb", "snowflake", "bigquery", "postgres")
 NO_TARGET = "No target warehouse chosen. Set `type` in configs/connections/warehouse.yml."
-
-
-class ConfigError(Exception):
-    """Every problem found in one config file."""
-
-    def __init__(self, path: Path, problems: list[str]):
-        super().__init__(f"{path}: {len(problems)} problem(s)")
-        self.path = path
-        self.problems = problems
 
 
 def _resolve_env(value):
@@ -159,17 +151,7 @@ def load_connections(path: Path = DEFAULT_PATH) -> Connections:
 
     Raises ConfigError listing every problem found in the file.
     """
-    path = Path(path)
-    if not path.exists():
-        raise ConfigError(path, ["file not found"])
-    try:
-        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as err:
-        mark = getattr(err, "problem_mark", None)
-        where = f"line {mark.line + 1}: " if mark else ""
-        raise ConfigError(path, [f"{where}not valid YAML ({getattr(err, 'problem', err)})"]) from None
-    if not isinstance(raw, dict):
-        raise ConfigError(path, ["expected a top-level `connections:` block"])
+    raw = read_yaml(path, "a top-level `connections:` block")
     try:
         return _WarehouseFile.model_validate(raw).connections
     except ValidationError as err:

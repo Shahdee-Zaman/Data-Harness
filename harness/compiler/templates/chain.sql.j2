@@ -1,0 +1,31 @@
+{#- The CTE chain shared by the clean model, the quarantine model and the runner's row
+    counts: read the source, one CTE per transformation, then tag every row. -#}
+{% import dialect_file as sql %}
+with source as (
+    {{ sql.read_source(source) | indent(4) }}
+),
+{% for step in steps %}
+
+{{ step.cte }} as (
+    -- transformations[{{ step.index }}]: {{ step.type }}
+{% if step.type == "rename" %}
+    {{ sql.rename(step.mapping, step.input) | indent(4) }}
+{% elif step.type == "parse_date" %}
+    {{ sql.parse_date(step.column, step.formats, step.input) | indent(4) }}
+{% elif step.type == "filter" %}
+    select *
+    from {{ step.input }}
+    where {{ step.expr }}
+{% elif step.type == "dedupe" %}
+    {{ sql.dedupe(step["keys"], step.order_by, step.input) | indent(4) }}
+{% endif %}
+),
+{% endfor %}
+
+tagged as (
+    -- every error-severity column test; _failed_rules lists the ones this row failed
+    select
+        *,
+        {{ sql.failed_rules(checks) | indent(8) }} as _failed_rules
+    from {{ last_cte }}
+)

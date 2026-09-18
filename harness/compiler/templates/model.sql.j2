@@ -1,0 +1,24 @@
+-- GENERATED from {{ config_path }}. Do not edit.
+{% import dialect_file as sql %}
+{% if quarantine %}
+-- Rows of the {{ name }} pipeline that failed at least one error-severity column test.
+-- _failed_rules names each failed test as <column>:<test>.
+{% else %}
+-- Clean rows of the {{ name }} pipeline: rows that passed every error-severity column test.
+{% endif %}
+
+{% include "chain.sql.j2" %}
+
+select
+{% for column in columns %}
+{% if quarantine %}
+    {{ column.name }},
+{% else %}
+    {{ sql.cast(column.name, column.type) }} as {{ column.name }}{{ "," if not loop.last }}
+{% endif %}
+{% endfor %}
+{% if quarantine %}
+    _failed_rules
+{% endif %}
+from tagged
+where _failed_rules {{ "<>" if quarantine else "=" }} ''

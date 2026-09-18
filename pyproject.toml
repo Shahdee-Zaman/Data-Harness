@@ -9,10 +9,20 @@ requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2,<3",
     "pyyaml>=6",
+    "duckdb>=1.1",
+    "jinja2>=3.1",
+    "dbt-core>=1.11,<2",
+    "dbt-duckdb>=1.9",
 ]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
 
 [project.scripts]
 harness = "harness.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["harness*"]
+
+[tool.setuptools.package-data]
+"harness.compiler" = ["templates/*.sql.j2"]

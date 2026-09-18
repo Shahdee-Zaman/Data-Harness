@@ -1,0 +1,59 @@
+# Drafted by /new-pipeline from profiles/orders.profile.json (row_count 202).
+# Answer every REVIEW question, edit as needed, then set status: approved yourself.
+
+pipeline: orders
+status: draft
+approved_by: null
+source: data/raw/orders.csv
+target: silver.orders             # convention: every draft targets silver.<name>
+
+columns:
+  - name: order_id
+    type: integer                 # inferred_type integer
+    tests:
+      - not_null                  # null_count 0
+      - unique                    # distinct_count 200 of row_count 202 (within 1%; see dedupe)
+      - accepted_range: {min: 0}  # negative_count 0 (min 100001)
+
+  - name: customer_id             # renamed from cust_id (see rename)
+    type: string                  # inferred_type string
+    tests:
+      # REVIEW: null_count 4 (null_pct 1.98). Should rows with no customer_id be quarantined, or allowed?
+      - not_null                  # null_count 4, null_pct 1.98
+
+  - name: amount
+    # REVIEW: min -342.47, max 455.41, at most 2 decimal places in min, max and sample_values. Is decimal(18,2) the right precision?
+    type: decimal(18,2)           # inferred_type decimal; 2 decimal places
+    tests:
+      - not_null                  # null_count 0
+      # REVIEW: negative_count 5 (min -342.47). Are negative amounts legitimate, or should those rows be quarantined?
+      - accepted_range: {min: 0}  # negative_count 5
+
+  - name: status
+    type: string                  # inferred_type string
+    tests:
+      - not_null                  # null_count 0
+      # REVIEW: 'test' (1 of 6 distinct_values) looks like test data and is left out, so rows with it will be quarantined. Is that right, or should they be filtered out or accepted?
+      - accepted_values: {values: [cancelled, delivered, placed, returned, shipped]}  # distinct_count 6
+
+  - name: order_date
+    type: date                    # string with parse_date
+    tests:
+      - not_null                  # null_count 0
+
+  - name: updated_at
+    type: timestamp               # inferred_type timestamp
+    tests:
+      - not_null                  # null_count 0
+
+transformations:
+  - {type: rename, mapping: {cust_id: customer_id}}                          # column name cust_id: 'cust' is a listed abbreviation
+  - {type: parse_date, column: order_date, formats: [YYYY-MM-DD, MM/DD/YYYY]}  # date_formats: YYYY-MM-DD 126, MM/DD/YYYY 76
+  # REVIEW: 2 duplicate order_id rows (distinct_count 200 of row_count 202). Should the row with the latest updated_at be kept?
+  - {type: dedupe, keys: [order_id], order_by: "updated_at desc"}            # distinct_count 200 of row_count 202
+
+quality:
+  - {rule: freshness, column: updated_at, max_age: 24h}  # inferred_type timestamp; max 2026-09-18 13:00:00
+  - {rule: row_count_change, max_pct: 30}                # always added
+
+on_failure: quarantine
